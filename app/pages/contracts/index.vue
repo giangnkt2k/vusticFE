@@ -1,23 +1,9 @@
 <script setup lang="ts">
 import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
-import { getPaginationRowModel } from '@tanstack/vue-table'
 import { useClipboard } from '@vueuse/core'
+import type { Contract } from '~/types/contract'
+import type { PaginatedResponse } from '~/types/customer'
 
-interface Contract {
-  id: number
-  name: string
-  contract_number: string
-  date_signed: string
-  customer: {
-    id: number
-    name: string
-  }
-  date_desk: string
-  contract_value: number
-  deposit: number
-  status: string
-  pdf_file: string
-}
 interface Pagination {
   first_page_url: string
   from: number
@@ -29,28 +15,31 @@ interface Pagination {
   per_page: number
   to: number
   total: number
+  current_page: number
 }
 const toast = useToast()
 const { copy } = useClipboard()
 // const table = useTemplateRef('table')
-const { contracts, fetchContracts } = useContracts()
+const { contracts, fetchContracts, deleteContract } = useContracts()
 await fetchContracts()
-const data = ref<Contract[]>([
-  ...contracts.value.data,
-])
-console.log('qưeee', contracts.value.to)
+
+const searchQuery = ref('')
+
+const data = ref<Contract[]>(
+  Array.isArray(contracts.value) ? contracts.value : (contracts.value as PaginatedResponse<Contract>).data || [],
+)
 const paginationFetch = ref<Pagination>({
-  first_page_url: contracts.value.first_page_url,
-  from: contracts.value.from,
-  last_page: contracts.value.last_page,
-  last_page_url: contracts.value.last_page_url,
-  links: contracts.value.links,
-  next_page_url: contracts.value.next_page_url,
-  prev_page_url: contracts.value.prev_page_url,
-  per_page: contracts.value.per_page,
-  to: contracts.value.to,
-  total: contracts.value.total,
-  current_page: contracts.value.current_page,
+  first_page_url: Array.isArray(contracts.value) ? '' : (contracts.value as PaginatedResponse<Contract>).first_page_url || '',
+  from: Array.isArray(contracts.value) ? 0 : (contracts.value as PaginatedResponse<Contract>).from || 0,
+  last_page: Array.isArray(contracts.value) ? 1 : (contracts.value as PaginatedResponse<Contract>).last_page || 1,
+  last_page_url: Array.isArray(contracts.value) ? '' : (contracts.value as PaginatedResponse<Contract>).last_page_url || '',
+  links: Array.isArray(contracts.value) ? [] : (contracts.value as PaginatedResponse<Contract>).links || [],
+  next_page_url: Array.isArray(contracts.value) ? null : (contracts.value as PaginatedResponse<Contract>).next_page_url || null,
+  prev_page_url: Array.isArray(contracts.value) ? null : (contracts.value as PaginatedResponse<Contract>).prev_page_url || null,
+  per_page: Array.isArray(contracts.value) ? 10 : (contracts.value as PaginatedResponse<Contract>).per_page || 10,
+  to: Array.isArray(contracts.value) ? 0 : (contracts.value as PaginatedResponse<Contract>).to || 0,
+  total: Array.isArray(contracts.value) ? 0 : (contracts.value as PaginatedResponse<Contract>).total || 0,
+  current_page: Array.isArray(contracts.value) ? 1 : (contracts.value as PaginatedResponse<Contract>).current_page || 1,
 })
 
 const columns: TableColumn<Contract>[] = [
@@ -99,6 +88,48 @@ const columns: TableColumn<Contract>[] = [
   },
 ]
 
+const searchingContracts = async () => {
+  await fetchContracts(searchQuery.value)
+  if (Array.isArray(contracts.value)) {
+    data.value = [...contracts.value]
+  }
+  else if ((contracts.value as PaginatedResponse<Contract>).data) {
+    data.value = [...(contracts.value as PaginatedResponse<Contract>).data]
+  }
+}
+
+const refreshTable = async () => {
+  await fetchContracts()
+  if (Array.isArray(contracts.value)) {
+    data.value = [...contracts.value]
+  }
+  else if (contracts.value && typeof contracts.value === 'object' && 'data' in contracts.value) {
+    data.value = [...(contracts.value as PaginatedResponse<Contract>).data]
+  }
+}
+
+const handleDeleteContract = async (contractId: number) => {
+  try {
+    await deleteContract(contractId)
+    toast.add({
+      title: 'Success',
+      description: 'Contract deleted successfully!',
+      color: 'success',
+      icon: 'i-lucide-circle-check',
+    })
+    // Refresh the table after deletion
+    await refreshTable()
+  }
+  catch {
+    toast.add({
+      title: 'Error',
+      description: 'Failed to delete contract',
+      color: 'error',
+      icon: 'i-lucide-circle-x',
+    })
+  }
+}
+
 function getDropdownActions(contract: Contract): DropdownMenuItem[][] {
   return [
     [
@@ -106,7 +137,7 @@ function getDropdownActions(contract: Contract): DropdownMenuItem[][] {
         label: 'Copy contract Id',
         icon: 'i-lucide-copy',
         onSelect: () => {
-          copy(contract.id.toString())
+          copy(contract.id?.toString() || '')
 
           toast.add({
             title: 'Contract ID copied to clipboard!',
@@ -125,6 +156,11 @@ function getDropdownActions(contract: Contract): DropdownMenuItem[][] {
         label: 'Delete',
         icon: 'i-lucide-trash',
         color: 'error',
+        onSelect: () => {
+          if (contract.id) {
+            handleDeleteContract(contract.id)
+          }
+        },
       },
     ],
   ]
@@ -134,7 +170,7 @@ function getDropdownActions(contract: Contract): DropdownMenuItem[][] {
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <!-- <div class="flex space-x-2">
+      <div class="flex space-x-2">
         <UInput
           v-model="searchQuery"
           icon="i-lucide-search"
@@ -148,7 +184,7 @@ function getDropdownActions(contract: Contract): DropdownMenuItem[][] {
         >
           Search
         </UButton>
-      </div> -->
+      </div>
       <UButton
         to="/contracts/create"
         target="_blank"

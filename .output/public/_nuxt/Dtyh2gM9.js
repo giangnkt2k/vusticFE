@@ -1,0 +1,1 @@
+import{u as t,a as c}from"#entry";const n="sanctum.token.cookie",a={async get(e){return e.runWithContext(()=>{const o=t(n,{readonly:!0});return c(o.value)??void 0})},async set(e,o){await e.runWithContext(()=>{const r=t(n,{secure:!0});r.value=o})}};export{a as cookieTokenStorage};

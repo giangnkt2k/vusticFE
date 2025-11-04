@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Create customer
 import { ref } from 'vue'
+import type { Customer, PaginatedResponse } from '~/types/customer'
 
 definePageMeta({
   layout: 'default',
@@ -17,36 +18,36 @@ const tableCustomerFields = [
   { key: 'company_tax_code', label: 'Mã số thuế công ty' },
   { key: 'note', label: 'Ghi chú' },
 ]
-const searchQuery = ref(undefined)
+const searchQuery = ref<string | undefined>(undefined)
 const { customers, fetchCustomers, updateCustomer, deleteCustomer } = await useCustomers()
 await fetchCustomers(searchQuery.value)
-const dataTable = ref([])
-dataTable.value = [...customers.value]
+const dataTable = ref<Customer[]>([])
+dataTable.value = Array.isArray(customers.value) ? [...customers.value] : [...(customers.value as PaginatedResponse<Customer>).data]
 
 const showDeleteDialog = ref(false)
-const customerToDelete = ref(null)
-const form = ref({ name: '', email: '', phone: '', address: '', company_tax_code: '' })
+const customerToDelete = ref<Customer | null>(null)
+const form = ref<Partial<Customer> & { id?: number }>({ name: '', email: '', phone: '', address: '', company_tax_code: '' })
 
 // Update customer
 const showUpdateDialog = ref(false)
-const openUpdateDialog = (customer) => {
+const openUpdateDialog = (customer: Customer) => {
   form.value = { ...customer }
   showUpdateDialog.value = true
 }
 async function submitUpdateCustomer() {
-  await updateCustomer(form.value.id, form.value)
+  await updateCustomer(form.value.id!, form.value)
   showUpdateDialog.value = false
   form.value = { name: '', email: '', phone: '', address: '', company_tax_code: '' }
   dataTable.value = []
   await fetchCustomers(searchQuery.value)
-  dataTable.value = [...customers.value]
+  dataTable.value = Array.isArray(customers.value) ? [...customers.value] : [...(customers.value as PaginatedResponse<Customer>).data]
 }
 // async function reloadDataTable() {
 //   dataTable.value = []
 //   dataTable.value = [...customers.value]
 // }
 // Delete customer
-const openDeleteDialog = (customer) => {
+const openDeleteDialog = (customer: Customer) => {
   customerToDelete.value = customer
   showDeleteDialog.value = true
 }
@@ -54,12 +55,13 @@ const openDeleteDialog = (customer) => {
 const handleDeleteCustomer = async () => {
   if (customerToDelete.value) {
     try {
-      await deleteCustomer(customerToDelete.value.id)
+      await deleteCustomer(customerToDelete.value.id!)
       // Đóng dialog trước
       showDeleteDialog.value = false
       customerToDelete.value = null
       // Cập nhật lại danh sách từ server
       await fetchCustomers(searchQuery.value)
+      dataTable.value = Array.isArray(customers.value) ? [...customers.value] : [...(customers.value as PaginatedResponse<Customer>).data]
       console.log('Customer deleted successfully, table updated', customers.value)
     }
     catch (error) {
@@ -76,9 +78,9 @@ const cancelDelete = () => {
 // search customer
 const searchingCustomer = async () => {
   await fetchCustomers(searchQuery.value)
-  dataTable.value = [...customers.value]
+  dataTable.value = Array.isArray(customers.value) ? [...customers.value] : [...(customers.value as PaginatedResponse<Customer>).data]
   console.log('Searched customers:', dataTable)
-  searchQuery.value = ''
+  searchQuery.value = undefined
 }
 </script>
 
@@ -127,7 +129,7 @@ const searchingCustomer = async () => {
       </thead>
       <tbody>
         <tr
-          v-for="customer in customers"
+          v-for="customer in dataTable"
           :key="customer.id"
           class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200"
         >

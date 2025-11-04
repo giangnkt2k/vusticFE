@@ -1,0 +1,1 @@
+import{av as e}from"#entry";const a=422,c=500;function E(s){return Object.entries(s).map(([r,t])=>({name:r,message:t[0]??""}))}const m=s=>{const r=s instanceof e,t=r&&s.response?.status===a,o=r?s.response?.status:c,n=t?E(s.response?._data.errors):[];return{isValidationError:t,code:o,bag:n}};export{m as u};

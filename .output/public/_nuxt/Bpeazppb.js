@@ -1,0 +1,1 @@
+import{d as _,e as c,w as e,ah as p,o as r,j as t,b1 as m,r as l,a2 as f}from"#entry";const x=_({__name:"minimal",setup(i){return(a,d)=>{const n=m,o=f,s=p;return r(),c(s,{class:"flex flex-col justify-center items-center pt-10 md:pt-20 pb-10 gap-5"},{default:e(()=>[t(n),t(o,{class:"w-fit"},{default:e(()=>[l(a.$slots,"default")]),_:3})]),_:3})}}});export{x as default};

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 import * as z from 'zod'
-// import type { FormSubmitEvent } from '@nuxt/ui'
+import type { FormSubmitEvent } from '@nuxt/ui'
+
 const schema = z.object({
   name: z.string().min(1, { message: 'Name is required' }),
   email: z.string().email({ message: 'Invalid email address' }),
@@ -26,7 +27,7 @@ const state = reactive<Partial<Schema>>({
 const { createCustomer } = useCustomers()
 async function handleSubmit(event: FormSubmitEvent<Schema>) {
   await createCustomer(event.data)
-  state.value = {
+  Object.assign(state, {
     name: undefined,
     email: undefined,
     phone: undefined,
@@ -35,7 +36,7 @@ async function handleSubmit(event: FormSubmitEvent<Schema>) {
     contact_point: undefined,
     note: undefined,
     company_tax_code: undefined,
-  }
+  })
   console.log(event.data)
   alert('Lưu khách hàng thành công')
   navigateTo('/customers')
