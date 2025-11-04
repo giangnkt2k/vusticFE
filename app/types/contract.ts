@@ -12,6 +12,7 @@ export interface Contract {
   pdf_file?: File | null
   created_at?: string
   updated_at?: string
+  position?: string
 }
 
 export const contractSchema = {
