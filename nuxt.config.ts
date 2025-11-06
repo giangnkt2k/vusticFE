@@ -42,7 +42,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     public: {
-      API_URL: process.env.NUXT_PUBLIC_SANCTUM_BASE_URL || 'http://localhost:80',
+      API_URL: process.env.NUXT_PUBLIC_SANCTUM_BASE_URL || 'https://vustic-be.sapca.ai.vn/',
     },
   },
 
